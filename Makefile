@@ -4,7 +4,7 @@ clean:
 	rm -rf build dist *.egg-info
 
 test:
-	PYTHONPATH=. nosetests -w test/ -v
+	PYTHONPATH=. deptest -s
 
 publish:
 	python setup.py sdist bdist_wheel upload
