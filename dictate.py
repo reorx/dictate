@@ -4,6 +4,9 @@
 from hashlib import md5
 
 
+__version__ = '0.0.1'
+
+
 def _key_rule(k):
     if k.startswith('[') and k.endswith(']'):
         k = int(k[1:-1])
