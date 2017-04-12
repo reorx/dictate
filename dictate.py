@@ -7,16 +7,6 @@ from hashlib import md5
 __version__ = '0.2.0'
 
 
-def _parse_key(k):
-    if k.startswith('[') and k.endswith(']'):
-        k = int(k[1:-1])
-    return k
-
-
-def _combine_key(keys):
-    return '.'.join(k.key for k in keys)
-
-
 class RKey(object):
     def __init__(self, from_type, key, origin_key=None):
         self.from_type = from_type
@@ -33,6 +23,10 @@ class RKey(object):
     @classmethod
     def d(cls, key):
         return cls(dict, key)
+
+
+def _combine_rkeys(keys):
+    return '.'.join(k.key for k in keys)
 
 
 def parse_retrieve_path(path):
@@ -73,7 +67,7 @@ def retrieve_dict(doc, path):
 
         # d must be the same type as k.from_type indicates
         if not isinstance(d, k.from_type):
-            used_path = _combine_key(used)
+            used_path = _combine_rkeys(used)
             raise KeyError(
                 "Failed to get `{}` after `{}`: `{}` is not type of {}".format(
                     k.origin_key, used_path, used_path, k.from_type))
@@ -81,11 +75,11 @@ def retrieve_dict(doc, path):
         try:
             d = d[k.key]
         except IndexError as e:
-            used_path = _combine_key(used)
+            used_path = _combine_rkeys(used)
             raise KeyError(
                 "Failed to get `{}` after `{}`: {}".format(k.origin_key, used_path, e))
         except KeyError as e:
-            used_path = _combine_key(used)
+            used_path = _combine_rkeys(used)
             raise KeyError(
                 "Failed to get `{}` after `{}`: {}".format(k.origin_key, used_path, e))
 
