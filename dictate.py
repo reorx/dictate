@@ -7,30 +7,52 @@ from hashlib import md5
 __version__ = '0.1.0'
 
 
-def _key_rule(k):
+def _parse_key(k):
     if k.startswith('[') and k.endswith(']'):
         k = int(k[1:-1])
     return k
 
 
-def retrieve_dict(doc, dot_key):
-    """
-    Could index value out by dot_key like this:
-        foo.bar.[0].player
+def _combine_key(keys):
+    return '.'.join(keys)
 
+
+def retrieve_dict(doc, dot_path):
+    """Retrive value from a nested dict, using path like this:
+        foo.bar.[0].player
+    :raises: KeyError, for not be able to find the value by path
+    :raises: ValueError, for invalid path format
     """
-    def recurse_dict(d, klist):
+    def recurse_dict(d, keys, used):
         try:
-            k = klist.pop(0)
+            k = keys.pop(0)
         except IndexError:
             return d
 
-        d = d[_key_rule(k)]
-        return recurse_dict(d, klist)
+        # d must be list or dict at this time
+        if not isinstance(d, (list, dict)):
+            used_path = _combine_key(used)
+            raise KeyError(
+                'Failed to get {} after {}: {} is not a list or dict'.format(k, used_path, used_path))
 
-    sp_keys = dot_key.split('.')
+        pk = _parse_key(k)
+        try:
+            d = d[pk]
+        except IndexError:
+            used_path = _combine_key(used)
+            raise KeyError(
+                'Failed to get {} after {}: {} not exist'.format(k, used_path, k))
+        except KeyError:
+            used_path = _combine_key(used)
+            raise KeyError(
+                'Failed to get {} after {}: {} not exist'.format(k, used_path, k))
 
-    return recurse_dict(doc, sp_keys)
+        used.append(k)
+        return recurse_dict(d, keys, used)
+
+    keys = dot_path.split('.')
+
+    return recurse_dict(doc, keys, [])
 
 
 def map_dict(o):

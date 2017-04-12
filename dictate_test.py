@@ -39,10 +39,24 @@ def make_d(**kwargs):
 
 def test_retrieve_dict():
     d = make_d()
+
+    # success
     asserts.equal(d['name'], retrieve_dict(d, 'name'))
     asserts.equal(d['people'][1], retrieve_dict(d, 'people.[1]'))
     asserts.equal(d['nature']['luck'], retrieve_dict(d, 'nature.luck'))
     asserts.equal(d['disks'][0]['volums'][0]['size'], retrieve_dict(d, 'disks.[0].volums.[0].size'))
+
+    # fail: just not exist
+    with asserts.raises(KeyError):
+        retrieve_dict(d, 'wtf')
+    with asserts.raises(KeyError):
+        retrieve_dict(d, 'name.wtf')
+    with asserts.raises(KeyError):
+        retrieve_dict(d, 'people.wtf')
+    with asserts.raises(ValueError):
+        retrieve_dict(d, 'people.[shit]')
+    with asserts.raises(KeyError):
+        retrieve_dict(d, 'people.[2]')
 
 
 @depend_on('test_retrieve_dict')
@@ -63,8 +77,7 @@ def test_hash_dict():
     d2['id'] = 'T002'
     asserts.not_equal(hash_dict(d1), hash_dict(d2))
 
-    # acturally a test for validate_dict,
-    # to test whether dict is changed or not after validate process
+    # to test consistency of two hash_dict call on a same dict
     d3 = make_d()
     hash_before = hash_dict(d3)
     asserts.equal(hash_dict(d3), hash_before)
