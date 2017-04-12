@@ -1,3 +1,3 @@
 # dictate
 
-dict utilities.
+Dictate what you want to do with dict.
