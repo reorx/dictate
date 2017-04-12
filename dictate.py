@@ -14,43 +14,83 @@ def _parse_key(k):
 
 
 def _combine_key(keys):
-    return '.'.join(keys)
+    return '.'.join(k.key for k in keys)
 
 
-def retrieve_dict(doc, dot_path):
+class RKey(object):
+    def __init__(self, from_type, key, origin_key=None):
+        self.from_type = from_type
+        self.key = key
+        if origin_key is None:
+            self.origin_key = key
+        else:
+            self.origin_key = origin_key
+
+    @classmethod
+    def l(cls, index, origin_key):
+        return cls(list, index, origin_key)
+
+    @classmethod
+    def d(cls, key):
+        return cls(dict, key)
+
+
+def parse_retrieve_path(path):
+    keys = []
+    for i in path.split('.'):
+        if i.startswith('[') and i.endswith(']'):
+            try:
+                k = int(i[1:-1])
+            except ValueError:
+                raise ValueError("`{}` is not a valid key for list".format(i))
+            keys.append(RKey.l(k, i))
+        else:
+            keys.append(RKey.d(i))
+    return keys
+
+
+def retrieve_dict(doc, path):
     """Retrive value from a nested dict, using path like this:
         foo.bar.[0].player
     :raises: KeyError, for not be able to find the value by path
     :raises: ValueError, for invalid path format
     """
+    # parse path to keys
+    if isinstance(path, list):
+        # check path as keys
+        keys = path
+        for i in keys:
+            if not isinstance(i, RKey):
+                raise ValueError('{} is not an instance of RKey'.format(i))
+    else:
+        keys = parse_retrieve_path(path)
+
     def recurse_dict(d, keys, used):
         try:
             k = keys.pop(0)
         except IndexError:
             return d
 
-        # d must be list or dict at this time
-        if not isinstance(d, (list, dict)):
+        # d must be the same type as k.from_type indicates
+        if not isinstance(d, k.from_type):
             used_path = _combine_key(used)
             raise KeyError(
-                'Failed to get {} after {}: {} is not a list or dict'.format(k, used_path, used_path))
+                "Failed to get `{}` after `{}`: `{}` is not type of {}".format(
+                    k.origin_key, used_path, used_path, k.from_type))
 
-        pk = _parse_key(k)
         try:
-            d = d[pk]
-        except IndexError:
+            d = d[k.key]
+        except IndexError as e:
             used_path = _combine_key(used)
             raise KeyError(
-                'Failed to get {} after {}: {} not exist'.format(k, used_path, k))
-        except KeyError:
+                "Failed to get `{}` after `{}`: {}".format(k.origin_key, used_path, e))
+        except KeyError as e:
             used_path = _combine_key(used)
             raise KeyError(
-                'Failed to get {} after {}: {} not exist'.format(k, used_path, k))
+                "Failed to get `{}` after `{}`: {}".format(k.origin_key, used_path, e))
 
         used.append(k)
         return recurse_dict(d, keys, used)
-
-    keys = dot_path.split('.')
 
     return recurse_dict(doc, keys, [])
 

@@ -47,16 +47,21 @@ def test_retrieve_dict():
     asserts.equal(d['disks'][0]['volums'][0]['size'], retrieve_dict(d, 'disks.[0].volums.[0].size'))
 
     # fail: just not exist
-    with asserts.raises(KeyError):
+    with asserts.raises(KeyError) as e:
         retrieve_dict(d, 'wtf')
-    with asserts.raises(KeyError):
+    print 'raises: ', e.exception
+    with asserts.raises(KeyError) as e:
         retrieve_dict(d, 'name.wtf')
-    with asserts.raises(KeyError):
+    print 'raises: ', e.exception
+    with asserts.raises(KeyError) as e:
         retrieve_dict(d, 'people.wtf')
-    with asserts.raises(ValueError):
+    print 'raises: ', e.exception
+    with asserts.raises(ValueError) as e:
         retrieve_dict(d, 'people.[shit]')
-    with asserts.raises(KeyError):
+    print 'raises: ', e.exception
+    with asserts.raises(KeyError) as e:
         retrieve_dict(d, 'people.[2]')
+    print 'raises: ', e.exception
 
 
 @depend_on('test_retrieve_dict')
