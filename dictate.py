@@ -89,6 +89,13 @@ def retrieve_dict(doc, path):
     return recurse_dict(doc, keys, [])
 
 
+def retrieve_dict_or_default(doc, path, default):
+    try:
+        retrieve_dict(doc, path)
+    except KeyError:
+        return default
+
+
 def map_dict(o):
     def recurse_doc(mapping, d, pk):
         if isinstance(d, dict):
